@@ -1,102 +1,97 @@
 name: Deploy to Production Server
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+  deploy:
+    runs-on: ubuntu-latest
 
-            - name: Install sshpass
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y sshpass
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-            - name: Deploy to server
-              run: |
-                  sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh \
-                    -o StrictHostKeyChecking=no \
-                    -p ${{ secrets.SERVER_PORT }} \
-                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} <<'ENDSSH'
-                        # ✅ Muat environment NVM secara eksplisit untuk sesi non-interaktif
-                        export NVM_DIR="$HOME/.nvm"
-                        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      - name: Install sshpass
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y sshpass
 
-                        # Pindah ke direktori proyek Anda di server
-                        # Ganti path ini jika berbeda
-                        cd /home/cuanku-pm2/htdocs/cuanku.web.id
+      - name: Deploy to server
+        env:
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          sshpass -p "$SERVER_PASSWORD" ssh \
+            -o StrictHostKeyChecking=no \
+            -p $SERVER_PORT \
+            $SERVER_USER@$SERVER_IP << 'ENDSSH'
+          
+            echo "🚀 Mulai deployment di server $HOSTNAME"
 
-                        # Verify PM2 path and version
-                        echo "🔍 Lokasi PM2: $(which pm2 2>/dev/null || echo 'PM2 tidak ditemukan')"
-                        echo "📊 Versi PM2: $(pm2 -v 2>/dev/null || echo 'PM2 tidak terinstall')"
+            # Load NVM (non-interaktif)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-                        # Install PM2 jika belum ada
-                        if ! command -v pm2 &> /dev/null; then
-                            echo "⚠️ PM2 tidak ditemukan, menginstall..."
-                            npm install -g pm2
-                        fi
+            cd /home/cuanku-pm2/htdocs/cuanku.web.id || exit 1
 
-                        echo "🔄 Mengambil kode terbaru dari branch main..."
-                        git checkout main
-                        git pull origin main
+            echo "🔄 Backup kode lama..."
+            BACKUP_DIR="../backup/cuanku_$(date +%Y%m%d%H%M%S)"
+            mkdir -p "$BACKUP_DIR"
+            cp -r . "$BACKUP_DIR"
 
-                        echo "📦 Menginstal dependensi Composer..."
-                        composer install --no-dev --optimize-autoloader
-                        composer dump-autoload --optimize 
+            echo "🔄 Pull kode terbaru"
+            git reset --hard
+            git pull origin main
 
-                        echo "📦 Membangun aset frontend (JavaScript/CSS)..."
-                        npm install
-                        npm run build
+            echo "📦 Install dependencies Laravel"
+            composer install --no-dev --optimize-autoloader
+            composer dump-autoload --optimize
 
-                        # Atur izin file yang benar setelah deployment
-                        echo "🔐 Mengatur izin file..."
-                        # Menggunakan user situs yang benar (cuanku-pm2)
-                        chown -R cuanku-pm2:cuanku-pm2 .
-                        chmod -R 775 storage bootstrap/cache
+            echo "📦 Install dan build frontend"
+            npm ci
+            npm run build
 
-                        echo "🔄 Menjalankan migrasi dan optimisasi Laravel..."
-                        php artisan clear-compiled  
-                        php artisan cache:clear     
-                        php artisan config:clear    
-                        php artisan route:clear     
-                        php artisan view:clear
-                        php artisan optimize:clear      
+            echo "🔐 Permissions & ownership"
+            chown -R cuanku-pm2:cuanku-pm2 .
+            chmod -R 775 storage bootstrap/cache
 
-                        echo "🔄 Menjalankan migrasi dan optimisasi Laravel..."
-                        php artisan migrate --force
-                        php artisan config:cache
-                        php artisan route:cache
-                        php artisan view:cache
-                        php artisan optimize
+            echo "⚙️ Artisan clear cache & optimize"
+            php artisan down
+            php artisan clear-compiled
+            php artisan optimize:clear
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            php artisan up
 
-                        # Menjalankan atau merestart aplikasi Laravel dengan PM2
-                        echo "🚀 Menjalankan aplikasi Laravel dengan PM2..."
-                        if pm2 list | grep -q "cuanku-app"; then
-                          pm2 restart cuanku-app
-                        else
-                          pm2 start php --name cuanku-app -- artisan serve --host=127.0.0.1 --port=8000
-                        fi
+            echo "🔁 PM2 - Laravel Serve"
+            if pm2 list | grep -q "cuanku-app"; then
+              pm2 restart cuanku-app
+            else
+              pm2 start php --name cuanku-app -- artisan serve --host=127.0.0.1 --port=8000
+            fi
 
-                        # Menjalankan atau merestart queue worker dengan PM2
-                        echo "🚀 Menjalankan queue worker dengan PM2..."
-                        if pm2 list | grep -q "cuanku-queue"; then
-                          pm2 restart cuanku-queue
-                        else
-                          pm2 start php --name cuanku-queue -- artisan queue:work --tries=3 --timeout=90
-                        fi
+            echo "🔁 PM2 - Queue Worker"
+            if pm2 list | grep -q "cuanku-queue"; then
+              pm2 restart cuanku-queue
+            else
+              pm2 start php --name cuanku-queue -- artisan queue:work --tries=3 --timeout=90
+            fi
 
-                        echo "⚙️ Konfigurasi startup pada boot..."
-                        pm2 startup
-                        pm2 save
+            echo "💾 PM2 startup persistence"
+            pm2 save
+            pm2 startup
 
-                        # cek status PM2
-                        echo "📊 Status PM2:"
-                        pm2 status
+            echo "📊 PM2 Status"
+            pm2 status
 
-                        echo "🎉 Deployment selesai!"
-                  ENDSSH
+            echo "✅ Deployment sukses!"
+          ENDSSH
+
+
