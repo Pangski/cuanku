@@ -16,14 +16,13 @@ enum RoleType: string
     }
 
     /**
-     * Get role options for forms/selects
+     * Get role options for forms/selects (value => label)
      */
     public static function options(): array
     {
-        return [
-            self::ADMIN->value => 'Admin',
-            self::USER->value => 'User',
-        ];
+        return collect(self::cases())
+            ->mapWithKeys(fn ($role) => [$role->value => $role->label()])
+            ->toArray();
     }
 
     /**
@@ -35,6 +34,15 @@ enum RoleType: string
             self::ADMIN => 'Admin',
             self::USER => 'User',
         };
+    }
+
+    /**
+     * Create RoleType from a string value
+     */
+    public static function fromValue(string $value): ?self
+    {
+        return collect(self::cases())
+            ->first(fn ($role) => $role->value === $value);
     }
 
     /**
