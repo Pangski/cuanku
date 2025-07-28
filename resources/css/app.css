@@ -5,6 +5,14 @@
 @tailwind utilities;
 
 @layer base {
+    html {
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    .pangolin {
+        font-family: 'Pangolin', cursive;
+    }
+
     :root {
         --background: 0 0% 100%;
         --foreground: 240 10% 3.9%;
@@ -58,5 +66,43 @@
         --chart-3: 30 80% 55%;
         --chart-4: 280 65% 60%;
         --chart-5: 340 75% 55%;
+    }
+}
+
+@layer utilities {
+    .bg-chart-1 {
+        background-color: hsl(var(--chart-1));
+    }
+
+    .bg-chart-2 {
+        background-color: hsl(var(--chart-2));
+    }
+
+    .bg-chart-3 {
+        background-color: hsl(var(--chart-3));
+    }
+
+    .bg-chart-4 {
+        background-color: hsl(var(--chart-4));
+    }
+
+    .bg-chart-5 {
+        background-color: hsl(var(--chart-5));
+    }
+
+    .text-primary {
+        color: hsl(var(--primary));
+    }
+
+    .bg-primary {
+        background-color: hsl(var(--primary));
+    }
+
+    .text-foreground {
+        color: hsl(var(--foreground));
+    }
+
+    .bg-background {
+        background-color: hsl(var(--background));
     }
 }
