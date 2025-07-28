@@ -1,35 +1,29 @@
 function setMetaColor(setting) {
-    const metaThemeColor = document.getElementById('theme-color-meta');
-    if (metaThemeColor) {
-        switch (setting) {
-            case 'dark':
-                metaThemeColor.setAttribute('content', '#000000');
-                break;
-            case 'light':
-                metaThemeColor.setAttribute('content', '#ffffff');
-                break;
-            case 'system':
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? metaThemeColor.setAttribute('content', '#000000') : metaThemeColor.setAttribute('content', '#ffffff');
-                break;
-            default:
-                metaThemeColor.setAttribute('content', '#ffffff');
-                break;
-        }
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) return;
+
+    let color = '#ffffff'; // default light
+
+    if (setting === 'dark') {
+        color = '#000000';
+    } else if (setting === 'system') {
+        color = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#ffffff';
     }
+
+    metaThemeColor.setAttribute('content', color);
 }
 
 function updateTheme() {
-    const themes = ['light', 'dark', 'system']
+    const themes = ['light', 'dark', 'system'];
     const currentTheme = localStorage.getItem('current-theme') || 'system';
 
-    themes.forEach(theme => {
-        document.documentElement.classList.remove(theme);
-    });
+    // Hapus semua class terkait tema
+    document.documentElement.classList.remove(...themes);
 
+    // Tambahkan class sesuai tema
     if (currentTheme === 'system') {
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? document.documentElement.classList.add('dark')
-            : document.documentElement.classList.add('light');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.add(systemPrefersDark ? 'dark' : 'light');
     } else {
         document.documentElement.classList.add(currentTheme);
     }
@@ -37,13 +31,12 @@ function updateTheme() {
     setMetaColor(currentTheme);
 }
 
+// Jalankan saat halaman dimuat
 updateTheme();
 
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+// Pantau perubahan tema sistem jika menggunakan 'system'
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (localStorage.getItem('current-theme') === 'system') {
-        e.matches
-            ? document.documentElement.classList.add('dark')
-            : document.documentElement.classList.remove('dark');
-        setMetaColor('system');
+        updateTheme(); // cukup panggil ulang
     }
 });
