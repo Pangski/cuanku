@@ -17,35 +17,56 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            // Log error terlebih dahulu
-            if ($response->getStatusCode() >= 500) {
-                Log::error($exception->getMessage(), ['exception' => $exception]);
+            $statusCode = $response->getStatusCode();
+
+            // Log error hanya jika status >= 500
+            if ($statusCode >= 500) {
+                Log::error($exception->getMessage(), [
+                    'exception' => $exception,
+                    'url' => $request->fullUrl(),
+                    'input' => $request->all(),
+                ]);
             }
 
             try {
-                if (! app()->environment(['local', 'testing']) &&
-                    in_array($response->getStatusCode(), [500, 503, 404, 403, 401, 422, 400, 429])) {
+                // Daftar status error yang akan di-respons khusus
+                $handledStatusCodes = [500, 503, 404, 403, 401, 422, 400, 429];
 
-                    // Return respons sederhana untuk mencegah recursive error
+                if (! app()->environment(['local', 'testing']) && in_array($statusCode, $handledStatusCodes)) {
+                    $message = app()->environment('production')
+                        ? 'Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.'
+                        : $exception->getMessage();
+
+                    // Jika permintaan mengharapkan JSON
                     if ($request->expectsJson() || $request->wantsJson()) {
                         return response()->json([
-                            'error' => 'Server error occurred',
-                            'status' => $response->getStatusCode(),
-                        ], $response->getStatusCode());
+                            'message' => $message,
+                            'status' => $statusCode,
+                            'error' => class_basename($exception),
+                        ], $statusCode);
                     }
 
-                    // Coba render view Inertia, tetapi dengan handling error tambahan
-                    return inertia('ErrorHandling', [
-                        'status' => $response->getStatusCode(),
-                        'message' => app()->environment('production') ? 'An error occurred' : $exception->getMessage(),
-                    ])->toResponse($request)->setStatusCode($response->getStatusCode());
+                    // Jika menggunakan Inertia
+                    if (function_exists('inertia')) {
+                        return inertia('ErrorHandling', [
+                            'status' => $statusCode,
+                            'message' => $message,
+                        ])->toResponse($request)->setStatusCode($statusCode);
+                    }
+
+                    // Fallback ke view statis jika tidak pakai inertia
+                    if (view()->exists("errors.{$statusCode}")) {
+                        return response()->view("errors.{$statusCode}", ['message' => $message], $statusCode);
+                    }
+
+                    // Fallback HTML sederhana
+                    return response("<h1>{$statusCode} - {$message}</h1>", $statusCode);
                 }
-                // ...
             } catch (\Throwable $e) {
-                // Fallback jika error handling juga error
                 Log::error('Error dalam error handling: '.$e->getMessage());
 
                 return response('Server Error', 500);
