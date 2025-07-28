@@ -19,16 +19,24 @@ enum MonthEnum: string
     case NOVEMBER = 'November';
     case DECEMBER = 'Desember';
 
+    /**
+     * Mendapatkan list bulan dalam format value-label untuk select input
+     */
     public static function options(array $exclude = []): array
     {
         return collect(self::cases())
-            ->filter(fn ($item) => ! in_array($item->name, $exclude))
+            ->filter(fn ($item) => !in_array($item->name, $exclude))
             ->map(fn ($item) => [
                 'value' => $item->value,
                 'label' => $item->value,
-            ])->values()->toArray();
+            ])
+            ->values()
+            ->toArray();
     }
 
+    /**
+     * Mengubah nomor bulan (1–12) ke enum MonthEnum
+     */
     public static function month(int $month): self
     {
         return match ($month) {
@@ -44,13 +52,16 @@ enum MonthEnum: string
             10 => self::OCTOBER,
             11 => self::NOVEMBER,
             12 => self::DECEMBER,
-            default => throw new InvalidArgumentException("Invalid month: {$month}"),
+            default => throw new InvalidArgumentException("Invalid month number: {$month}"),
         };
     }
 
+    /**
+     * Mengubah nama string bulan menjadi enum MonthEnum
+     */
     public static function stringMonth(string $month): self
     {
-        return match ($month) {
+        return match (ucfirst(strtolower($month))) {
             'Januari' => self::JANUARY,
             'Februari' => self::FEBRUARY,
             'Maret' => self::MARCH,
@@ -63,7 +74,7 @@ enum MonthEnum: string
             'Oktober' => self::OCTOBER,
             'November' => self::NOVEMBER,
             'Desember' => self::DECEMBER,
-            default => throw new InvalidArgumentException("Invalid month: {$month}"),
+            default => throw new InvalidArgumentException("Invalid month name: {$month}"),
         };
     }
 }
