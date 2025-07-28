@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+// use App\Enums\RoleType; // Aktifkan jika kamu pakai Enum
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,14 +14,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // Create admin user
+        // Membuat user admin default
         User::factory()->create([
             'name' => 'Administrator',
             'email' => 'admin@cuanku.com',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
+            'password' => Hash::make('password'), // Lebih aman dari bcrypt()
+            'role' => 'admin', // Jika pakai Enum: RoleType::ADMIN->value,
             'is_active' => true,
             'is_agentic' => false,
         ]);
