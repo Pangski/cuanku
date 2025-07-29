@@ -1,22 +1,24 @@
 <?php
 
-use App\Http\Controllers\AnnualReportController;
-use App\Http\Controllers\AssetController;
-use App\Http\Controllers\BalanceController;
-use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\GoalController;
-use App\Http\Controllers\IncomeController;
-use App\Http\Controllers\LiabilityController;
-use App\Http\Controllers\NetWorthAssetController;
-use App\Http\Controllers\NetWorthController;
-use App\Http\Controllers\NetWorthLiabilityController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\PrivacyController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ReportTrackingController;
-use App\Http\Controllers\TermAndConditionController;
+use App\Http\Controllers\{
+    AnnualReportController,
+    AssetController,
+    BalanceController,
+    BudgetController,
+    DashboardController,
+    ExpenseController,
+    GoalController,
+    IncomeController,
+    LiabilityController,
+    NetWorthAssetController,
+    NetWorthController,
+    NetWorthLiabilityController,
+    PaymentController,
+    PrivacyController,
+    ProfileController,
+    ReportTrackingController,
+    TermAndConditionController
+};
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,114 +32,118 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get(uri: 'testing', action: fn () => Inertia::render(component: 'Testing'));
+Route::get('testing', fn () => Inertia::render('Testing'));
 
-// Route::get('dashboard', function () {
-//     return Inertia::render('Dashboard');
-// })->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard
+Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::controller(DashboardController::class)->group(function () {
-    Route::get('dashboard', 'index')->name('dashboard');
-});
-
-Route::controller(PaymentController::class)->group(function () {
-    Route::get('payments', 'index')->name('payments.index');
-    Route::get('payments/create', 'create')->name('payments.create');
-    Route::post('payments/create', 'store')->name('payments.store');
-    Route::get('payments/{payment}/edit', 'edit')->name('payments.edit');
-    Route::put('payments/{payment}/edit', 'update')->name('payments.update');
-    Route::delete('payments/{payment}/destroy', 'destroy')->name('payments.destroy');
-});
-
-Route::controller(GoalController::class)->group(function () {
-    Route::get('goals', 'index')->name('goals.index');
-    Route::get('goals/create', 'create')->name('goals.create');
-    Route::post('goals/create', 'store')->name('goals.store');
-    Route::get('goals/{goal}/edit', 'edit')->name('goals.edit');
-    Route::put('goals/{goal}/edit', 'update')->name('goals.update');
-    Route::delete('goals/{goal}/destroy', 'destroy')->name('goals.destroy');
-});
-
-Route::controller(BalanceController::class)->group(function () {
-    Route::get('goals/{goal}/balances', 'index')->name('balances.index');
-    Route::get('goals/{goal}/balances/create', 'create')->name('balances.create');
-    Route::post('goals/{goal}/balances/create', 'store')->name('balances.store');
-    Route::delete('goals/{goal}/balances/{balance}/destroy', 'destroy')->name('balances.destroy');
-});
-
-Route::controller(BudgetController::class)->group(function () {
-    Route::get('budgets', 'index')->name('budgets.index');
-    Route::get('budgets/create', 'create')->name('budgets.create');
-    Route::post('budgets/create', 'store')->name('budgets.store');
-    Route::get('budgets/{budget}/edit', 'edit')->name('budgets.edit');
-    Route::put('budgets/{budget}/edit', 'update')->name('budgets.update');
-    Route::delete('budgets/{budget}/destroy', 'destroy')->name('budgets.destroy');
-});
-
-Route::controller(IncomeController::class)->group(function () {
-    Route::get('incomes', 'index')->name('incomes.index');
-    Route::get('incomes/create', 'create')->name('incomes.create');
-    Route::post('incomes/create', 'store')->name('incomes.store');
-    Route::get('incomes/{income}/edit', 'edit')->name('incomes.edit');
-    Route::put('incomes/{income}/edit', 'update')->name('incomes.update');
-    Route::delete('incomes/{income}/destroy', 'destroy')->name('incomes.destroy');
-});
-
-Route::controller(ExpenseController::class)->group(function () {
-    Route::get('expenses', 'index')->name('expenses.index');
-    Route::get('expenses/create', 'create')->name('expenses.create');
-    Route::post('expenses/create', 'store')->name('expenses.store');
-    Route::get('expenses/{expense}/edit', 'edit')->name('expenses.edit');
-    Route::put('expenses/{expense}/edit', 'update')->name('expenses.update');
-    Route::delete('expenses/{expense}/destroy', 'destroy')->name('expenses.destroy');
-});
-
-Route::controller(NetWorthController::class)->group(function () {
-    Route::get('net-worths', 'index')->name('net-worths.index');
-    Route::get('net-worths/create', 'create')->name('net-worths.create');
-    Route::post('net-worths/create', 'store')->name('net-worths.store');
-    Route::get('net-worths/{netWorth}/detail', 'show')->name('net-worths.show');
-    Route::get('net-worths/{netWorth}/edit', 'edit')->name('net-worths.edit');
-    Route::put('net-worths/{netWorth}/edit', 'update')->name('net-worths.update');
-    Route::delete('net-worths/{netWorth}/destroy', 'destroy')->name('net-worths.destroy');
-});
-
-Route::controller(AssetController::class)->group(function () {
-    Route::get('net-worths/{netWorth}/assets', 'index')->name('assets.index');
-    Route::get('net-worths/{netWorth}/assets/create', 'create')->name('assets.create');
-    Route::post('net-worths/{netWorth}/assets/create', 'store')->name('assets.store');
-    Route::get('net-worths/{netWorth}/assets/{asset}/edit', 'edit')->name('assets.edit');
-    Route::put('net-worths/{netWorth}/assets/{asset}/edit', 'update')->name('assets.update');
-    Route::delete('net-worths/{netWorth}/assets/{asset}/destroy', 'destroy')->name('assets.destroy');
-});
-
-Route::post('net-worths/{netWorth}/assets/{asset}/net-worth-assets', NetWorthAssetController::class)->name('net-worth-asset');
-
-Route::controller(LiabilityController::class)->group(function () {
-    Route::get('net-worths/{netWorth}/liabilities', 'index')->name('liabilities.index');
-    Route::get('net-worths/{netWorth}/liabilities/create', 'create')->name('liabilities.create');
-    Route::post('net-worths/{netWorth}/liabilities/create', 'store')->name('liabilities.store');
-    Route::get('net-worths/{netWorth}/liabilities/{liability}/edit', 'edit')->name('liabilities.edit');
-    Route::put('net-worths/{netWorth}/liabilities/{liability}/edit', 'update')->name('liabilities.update');
-    Route::delete('net-worths/{netWorth}/liabilities/{liability}/destroy', 'destroy')->name('liabilities.destroy');
-});
-
-Route::post('net-worths/{netWorth}/liabilities/{liability}/net-worth-liability', NetWorthLiabilityController::class)->name('net-worth-liability');
-
-Route::get('report-trackings', ReportTrackingController::class)->name('report-trackings');
-Route::get('report-trackings/download-pdf', [ReportTrackingController::class, 'downloadPdf'])->name('report-trackings.download-pdf');
-
-Route::get('annual-reports', [AnnualReportController::class, 'index'])->name('annual-reports');
-Route::get('annual-reports/download-pdf', [AnnualReportController::class, 'downloadPdf'])->name('annual-reports.download-pdf');
-
-Route::get('privacy', [PrivacyController::class, 'index'])->name('privacy.index');
-
-Route::get('term-and-condition', [TermAndConditionController::class, 'index'])->name('term-and-condition.index');
-
+// Group routes with 'auth' middleware
 Route::middleware('auth')->group(function () {
-    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Payments
+    Route::controller(PaymentController::class)->group(function () {
+        Route::get('payments', 'index')->name('payments.index');
+        Route::get('payments/create', 'create')->name('payments.create');
+        Route::post('payments', 'store')->name('payments.store');
+        Route::get('payments/{payment}/edit', 'edit')->name('payments.edit');
+        Route::put('payments/{payment}', 'update')->name('payments.update');
+        Route::delete('payments/{payment}', 'destroy')->name('payments.destroy');
+    });
+
+    // Goals & Balances
+    Route::controller(GoalController::class)->group(function () {
+        Route::get('goals', 'index')->name('goals.index');
+        Route::get('goals/create', 'create')->name('goals.create');
+        Route::post('goals', 'store')->name('goals.store');
+        Route::get('goals/{goal}/edit', 'edit')->name('goals.edit');
+        Route::put('goals/{goal}', 'update')->name('goals.update');
+        Route::delete('goals/{goal}', 'destroy')->name('goals.destroy');
+    });
+
+    Route::controller(BalanceController::class)->group(function () {
+        Route::get('goals/{goal}/balances', 'index')->name('balances.index');
+        Route::get('goals/{goal}/balances/create', 'create')->name('balances.create');
+        Route::post('goals/{goal}/balances', 'store')->name('balances.store');
+        Route::delete('goals/{goal}/balances/{balance}', 'destroy')->name('balances.destroy');
+    });
+
+    // Budgets
+    Route::controller(BudgetController::class)->group(function () {
+        Route::get('budgets', 'index')->name('budgets.index');
+        Route::get('budgets/create', 'create')->name('budgets.create');
+        Route::post('budgets', 'store')->name('budgets.store');
+        Route::get('budgets/{budget}/edit', 'edit')->name('budgets.edit');
+        Route::put('budgets/{budget}', 'update')->name('budgets.update');
+        Route::delete('budgets/{budget}', 'destroy')->name('budgets.destroy');
+    });
+
+    // Income & Expense
+    foreach ([
+        'incomes' => IncomeController::class,
+        'expenses' => ExpenseController::class,
+    ] as $prefix => $controller) {
+        Route::controller($controller)->group(function () use ($prefix) {
+            Route::get($prefix, 'index')->name("$prefix.index");
+            Route::get("$prefix/create", 'create')->name("$prefix.create");
+            Route::post($prefix, 'store')->name("$prefix.store");
+            Route::get("$prefix/{id}/edit", 'edit')->name("$prefix.edit");
+            Route::put("$prefix/{id}", 'update')->name("$prefix.update");
+            Route::delete("$prefix/{id}", 'destroy')->name("$prefix.destroy");
+        });
+    }
+
+    // Net Worth
+    Route::controller(NetWorthController::class)->group(function () {
+        Route::get('net-worths', 'index')->name('net-worths.index');
+        Route::get('net-worths/create', 'create')->name('net-worths.create');
+        Route::post('net-worths', 'store')->name('net-worths.store');
+        Route::get('net-worths/{netWorth}/detail', 'show')->name('net-worths.show');
+        Route::get('net-worths/{netWorth}/edit', 'edit')->name('net-worths.edit');
+        Route::put('net-worths/{netWorth}', 'update')->name('net-worths.update');
+        Route::delete('net-worths/{netWorth}', 'destroy')->name('net-worths.destroy');
+    });
+
+    // Asset & Liability
+    Route::controller(AssetController::class)->group(function () {
+        Route::get('net-worths/{netWorth}/assets', 'index')->name('assets.index');
+        Route::get('net-worths/{netWorth}/assets/create', 'create')->name('assets.create');
+        Route::post('net-worths/{netWorth}/assets', 'store')->name('assets.store');
+        Route::get('net-worths/{netWorth}/assets/{asset}/edit', 'edit')->name('assets.edit');
+        Route::put('net-worths/{netWorth}/assets/{asset}', 'update')->name('assets.update');
+        Route::delete('net-worths/{netWorth}/assets/{asset}', 'destroy')->name('assets.destroy');
+    });
+
+    Route::post('net-worths/{netWorth}/assets/{asset}/net-worth-assets', NetWorthAssetController::class)->name('net-worth-asset');
+
+    Route::controller(LiabilityController::class)->group(function () {
+        Route::get('net-worths/{netWorth}/liabilities', 'index')->name('liabilities.index');
+        Route::get('net-worths/{netWorth}/liabilities/create', 'create')->name('liabilities.create');
+        Route::post('net-worths/{netWorth}/liabilities', 'store')->name('liabilities.store');
+        Route::get('net-worths/{netWorth}/liabilities/{liability}/edit', 'edit')->name('liabilities.edit');
+        Route::put('net-worths/{netWorth}/liabilities/{liability}', 'update')->name('liabilities.update');
+        Route::delete('net-worths/{netWorth}/liabilities/{liability}', 'destroy')->name('liabilities.destroy');
+    });
+
+    Route::post('net-worths/{netWorth}/liabilities/{liability}/net-worth-liability', NetWorthLiabilityController::class)->name('net-worth-liability');
+
+    // Reports
+    Route::get('report-trackings', ReportTrackingController::class)->name('report-trackings');
+    Route::get('report-trackings/download-pdf', [ReportTrackingController::class, 'downloadPdf'])->name('report-trackings.download-pdf');
+
+    Route::get('annual-reports', [AnnualReportController::class, 'index'])->name('annual-reports');
+    Route::get('annual-reports/download-pdf', [AnnualReportController::class, 'downloadPdf'])->name('annual-reports.download-pdf');
+
+    // Static Pages
+    Route::get('privacy', [PrivacyController::class, 'index'])->name('privacy.index');
+    Route::get('term-and-condition', [TermAndConditionController::class, 'index'])->name('term-and-condition.index');
+
+    // Profile
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('profile', 'edit')->name('profile.edit');
+        Route::patch('profile', 'update')->name('profile.update');
+        Route::delete('profile', 'destroy')->name('profile.destroy');
+    });
+
 });
 
 require __DIR__.'/auth.php';
